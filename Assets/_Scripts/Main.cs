@@ -29,9 +29,19 @@ public class Main : MonoBehaviour
 	 * 在類別的根目錄中，定義下列 URL 字串。 
 	 * 此 URL 會指向範例影像的資料夾。
 	 */
-	const string IMAGE_BASE_URL = "https://csdx.blob.core.windows.net/resources/Face/Images/";
+	const string URL = "https://csdx.blob.core.windows.net/resources/Face/Images/";
 
-    private void Awake()
+	/* 定義要指向不同辨識模型類型的字串。
+	 * Recognition01: 單純偵測人臉位置。
+	 * Recognition02: 除了偵測人臉位置，還會取出其特徵，用於辨別情緒、頭髮顏色、性別、表情、、、等資訊。
+	 */
+	// Used in the Detect Faces and Verify examples.
+	// Recognition model 2 is used for feature extraction, use 1 to simply recognize/detect a face. 
+	// However, the API calls to Detection that are used with Verify, Find Similar, or Identify must share the same recognition model.
+	const string RECOGNITION_MODEL1 = RecognitionModel.Recognition01;
+	const string RECOGNITION_MODEL2 = RecognitionModel.Recognition02;
+
+	private void Awake()
     {
         Utils.initConfigData();
     }
@@ -40,26 +50,50 @@ public class Main : MonoBehaviour
     void Start()
     {
 		// Authenticate.
-		IFaceClient client = Utils.Authenticate(ConfigData.FACE_ENDPOINT, ConfigData.FACE_SUBSCRIPTION_KEY1);
+		IFaceClient client = Utils.authenticate(ConfigData.FACE_ENDPOINT, ConfigData.FACE_SUBSCRIPTION_KEY1);
 
-		/* 定義要指向不同辨識模型類型的字串。
-		 * Recognition01: 單純偵測人臉位置。
-		 * Recognition02: 除了偵測人臉位置，還會取出其特徵，用於辨別情緒、頭髮顏色、性別、表情、、、等資訊。
-		 */
-		// Used in the Detect Faces and Verify examples.
-		// Recognition model 2 is used for feature extraction, use 1 to simply recognize/detect a face. 
-		// However, the API calls to Detection that are used with Verify, Find Similar, or Identify must share the same recognition model.
-		const string RECOGNITION_MODEL1 = RecognitionModel.Recognition01;
-		const string RECOGNITION_MODEL2 = RecognitionModel.Recognition02;
+		//_ = Utils.printAllPersonGroupId(client);
+		//_ = testPersonGroup(client, "5ce45c41-d387-4afc-8241-279da096e27e");
 
 		#region DetectFaceExtract
 		// 偵測影像中的人臉 Detect - get features from faces.
 		// 最終的偵測作業會採用 FaceClient 物件、影像 URL 和辨識模型。
 		//_ = DetectFaceExtract(client, IMAGE_BASE_URL, RECOGNITION_MODEL2);
-		//_ = extractFace(client, IMAGE_BASE_URL);
-		_ = extractFaceWithStream(client);
+		//_ = extractFaceWithUrlDemo(client);
+		//_ = extractFaceWithStreamDemo(client);
 		#endregion
 
+		#region FindSimilar
+		// Find Similar - find a similar face from a list of faces.
+		//_ = FindSimilar(client, URL, RECOGNITION_MODEL1);
+		#endregion
+
+		#region PersonGroup
+		// Identify - recognize a face(s) in a person group (a person group is created in this example).
+		//_ = IdentifyInPersonGroup(client, URL, RECOGNITION_MODEL1);
+		//identifyInPersonGroupWithTrainingDemo(client);
+		//_ = identifyInPersonGroup(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e", image_name: "identification1.jpg");
+		//trainPersonGroupWithStreamAsyncDemo(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e");
+
+		#endregion
+
+		#region IdentifyInPersonGroup
+		// Identify - recognize a face(s) in a person group (a person group is created in this example).
+		//_ = IdentifyInPersonGroup(client, URL, RECOGNITION_MODEL1);
+		//identifyInPersonGroupWithTrainingDemo(client);
+		//_ = identifyInPersonGroup(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e", image_name: "identification1.jpg");
+		#endregion
+
+		#region DeletePersonGroup
+		//// 建立了 PersonGroup，但想要將其刪除，請在程式中執行下列程式碼
+		//// sourcePersonGroup: PersonGroup 建立時產生的唯一識別碼
+		//_ = deletePersonGroup(client, group_id: "cfd499dc-6937-4068-8ee2-4fea6d60f99b");
+
+		// 刪除 PersonGroup 當中個別的 Person
+		//_ = deletePersonFromGroupAsyncDemo(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e");
+		#endregion
+
+		#region 尚未檢視
 		#region 快照集: 用於移轉資料
 		/* 設定目標訂用帳戶
 		 * 首先，您必須擁有第二個臉部資源 Azure 訂用帳戶；若要這麼做，請遵循設定一節中的步驟。
@@ -68,10 +102,12 @@ public class Main : MonoBehaviour
 		 * 在此範例中，為目標 PersonGroup 的識別碼宣告一個變數—此物件屬於新的訂用帳戶，而您會將資料複製到其中。
 		 */
 
-		////The Snapshot example needs its own 2nd client, since it uses two different regions.
+		// 取得第二個臉部資源 Azure 訂用帳戶
+		//The Snapshot example needs its own 2nd client, since it uses two different regions.
 		//string TARGET_SUBSCRIPTION_KEY = Environment.GetEnvironmentVariable("FACE_SUBSCRIPTION_KEY2");
 		//string TARGET_ENDPOINT = Environment.GetEnvironmentVariable("FACE_ENDPOINT2");
 
+		// 取得第一個臉部資源 Azure 訂用帳戶
 		//// Grab your subscription ID, from any resource in Azure, 
 		//// from the Overview page(all resources have the same subscription ID).
 		//Guid AZURE_SUBSCRIPTION_ID = new Guid(Environment.GetEnvironmentVariable("AZURE_SUBSCRIPTION_ID"));
@@ -92,26 +128,12 @@ public class Main : MonoBehaviour
 		//_ = Snapshot(client, clientTarget, sourcePersonGroup, AZURE_SUBSCRIPTION_ID, TARGET_AZURE_SUBSCRIPTION_ID);
 		#endregion
 
-
 		//// Large FaceList variables
 		//const string LargeFaceListId = "mylargefacelistid_001"; // must be lowercase, 0-9, "_" or "-" characters
 		//const string LargeFaceListName = "MyLargeFaceListName";
 
-
-
-
-		#region FindSimilar
-		// Find Similar - find a similar face from a list of faces.
-		//_ = FindSimilar(client, IMAGE_BASE_URL, RECOGNITION_MODEL1); 
-		#endregion
-
 		//// Verify - compare two images if the same person or not.
 		//Verify(client, IMAGE_BASE_URL, RECOGNITION_MODEL2).Wait();
-
-		#region IdentifyInPersonGroup
-		//// Identify - recognize a face(s) in a person group (a person group is created in this example).
-		//_ = IdentifyInPersonGroup(client, IMAGE_BASE_URL, RECOGNITION_MODEL1); 
-		#endregion
 
 		//// LargePersonGroup - create, then get data.
 		//LargePersonGroup(client, IMAGE_BASE_URL, RECOGNITION_MODEL1).Wait();
@@ -125,24 +147,17 @@ public class Main : MonoBehaviour
 
 		//// <snippet_persongroup_delete>
 		//// At end, delete person groups in both regions (since testing only)
-		//Debug.Log("========DELETE PERSON GROUP========");
-
-		#region DeletePersonGroup
-		//// 建立了 PersonGroup，但想要將其刪除，請在程式中執行下列程式碼
-		//// sourcePersonGroup: PersonGroup 建立時產生的唯一識別碼
-		//_ = DeletePersonGroup(client, sourcePersonGroup); 
+		//Debug.Log("========DELETE PERSON GROUP========"); 
 		#endregion
-
-
-		Debug.Log("End of quickstart.");
 	}
 
-    // Update is called once per frame
-    void Update()
+	// Update is called once per frame
+	void Update()
     {
         
     }
 
+	#region Origin demo code
 	/* DETECT FACES
 	 * Detects features from faces and IDs them.
 	 * 偵測指定 URL 上三個影像中的臉部，並在程式記憶體中建立 DetectedFace 物件的清單。 
@@ -181,7 +196,7 @@ public class Main : MonoBehaviour
 				FaceAttributeType.Makeup,
 				FaceAttributeType.Noise,
 				FaceAttributeType.Occlusion,
-				FaceAttributeType.Smile 
+				FaceAttributeType.Smile
 		};
 
 		// 儲存偵測到的臉部列表
@@ -357,413 +372,6 @@ public class Main : MonoBehaviour
 		Debug.Log("==================================================");
 	}
 
-	public static async Task extractFace(IFaceClient client, string url)
-	{
-		Debug.Log(string.Format("[Main] extractFace"));
-
-		// Create a list of images
-		List<string> imageFileNames = new List<string>
-		{
-			"detection1.jpg",    // single female with glasses
-			// "detection2.jpg", // (optional: single man)
-			// "detection3.jpg", // (optional: single male construction worker)
-			// "detection4.jpg", // (optional: 3 people at cafe, 1 is blurred)
-			"detection5.jpg",    // family, woman child man
-			"detection6.jpg"     // elderly couple, male female
-		};
-
-		IList<FaceAttributeType> return_face_attributes = new List<FaceAttributeType> {
-				FaceAttributeType.Accessories,
-				FaceAttributeType.Age,
-				FaceAttributeType.Blur,
-				FaceAttributeType.Emotion,
-				FaceAttributeType.Exposure,
-				FaceAttributeType.FacialHair,
-				FaceAttributeType.Gender,
-				FaceAttributeType.Glasses,
-				FaceAttributeType.Hair,
-				FaceAttributeType.HeadPose,
-				FaceAttributeType.Makeup,
-				FaceAttributeType.Noise,
-				FaceAttributeType.Occlusion,
-				FaceAttributeType.Smile
-		};
-
-		// 儲存偵測到的臉部列表
-		IList<DetectedFace> detectedFaces;
-
-		float start_time;
-		foreach (var imageFileName in imageFileNames)
-		{
-			start_time = Utils.getCurrentTimestamp();
-
-			// Detect faces with all attributes from image url.			
-			//detectedFaces = await client.Face.DetectWithUrlAsync(
-			//		string.Format("{0}{1}", url, imageFileName),
-			//		returnFaceAttributes: return_face_attributes,
-			//		recognitionModel: recognition_model);
-
-			detectedFaces = await Utils.extractWithUrlAsync(client, string.Format("{0}{1}", url, imageFileName), return_face_attributes);
-
-			Debug.Log(string.Format("[Main] extractFace | {0} face(s) detected from image {1}.",
-				detectedFaces.Count, imageFileName));
-
-			Debug.Log(string.Format("[Main] extractFace | imageFileName: {0}", imageFileName));
-			await new UnityEngine.WaitForSecondsRealtime(Time.deltaTime);
-
-			// 剖析每個偵測到的臉部，並列印屬性資料。
-			// Parse and print all attributes of each detected face.
-			foreach (var face in detectedFaces)
-			{
-
-				Debug.Log(string.Format("[Main] extractFace | Face attributes for {0}:", imageFileName));
-
-				// Get bounding box of the faces
-				Debug.Log(string.Format("[Main] extractFace | Rectangle(Left/Top/Width/Height): {0}, {1}, {2}, {3}",
-					face.FaceRectangle.Left, face.FaceRectangle.Top, face.FaceRectangle.Width, face.FaceRectangle.Height));
-
-				// Get accessories of the faces
-				List<Accessory> accessoriesList = (List<Accessory>)face.FaceAttributes.Accessories;
-				int count = face.FaceAttributes.Accessories.Count;
-				string accessory;
-				string[] accessoryArray = new string[count];
-				if (count == 0)
-				{
-					accessory = "NoAccessories";
-				}
-				else
-				{
-					for (int i = 0; i < count; ++i)
-					{
-						accessoryArray[i] = accessoriesList[i].Type.ToString();
-					}
-
-					accessory = string.Join(",", accessoryArray);
-				}
-
-				Debug.Log(string.Format("[Main] extractFace | Accessories: {0}", accessory));
-
-				// Get face other attributes
-				Debug.Log(string.Format("[Main] extractFace | Age: {0}", face.FaceAttributes.Age));
-				Debug.Log(string.Format("[Main] extractFace | Blur: {0}", face.FaceAttributes.Blur.BlurLevel));
-
-				// Get emotion on the face
-				string emotionType = string.Empty;
-				double emotionValue = 0.0;
-				Emotion emotion = face.FaceAttributes.Emotion;
-
-				// emotion 下的各個情緒，變數類型為 double
-				if (emotion.Anger > emotionValue)
-				{
-					emotionValue = emotion.Anger;
-					emotionType = "Anger";
-				}
-
-				if (emotion.Contempt > emotionValue)
-				{
-					emotionValue = emotion.Contempt;
-					emotionType = "Contempt";
-				}
-
-				if (emotion.Disgust > emotionValue)
-				{
-					emotionValue = emotion.Disgust;
-					emotionType = "Disgust";
-				}
-
-				if (emotion.Fear > emotionValue)
-				{
-					emotionValue = emotion.Fear;
-					emotionType = "Fear";
-				}
-
-				if (emotion.Happiness > emotionValue)
-				{
-					emotionValue = emotion.Happiness;
-					emotionType = "Happiness";
-				}
-
-				if (emotion.Neutral > emotionValue)
-				{
-					emotionValue = emotion.Neutral;
-					emotionType = "Neutral";
-				}
-
-				if (emotion.Sadness > emotionValue)
-				{
-					emotionValue = emotion.Sadness;
-					emotionType = "Sadness";
-				}
-
-				if (emotion.Surprise > emotionValue)
-				{
-					emotionType = "Surprise";
-				}
-
-				Debug.Log(string.Format("[Main] extractFace | Emotion: {0}", emotionType));
-
-				// Get more face attributes
-				Debug.Log(string.Format("[Main] extractFace | Exposure: {0}", face.FaceAttributes.Exposure.ExposureLevel));
-				Debug.Log(string.Format("[Main] extractFace | FacialHair: {0}", face.FaceAttributes.FacialHair.Moustache + face.FaceAttributes.FacialHair.Beard + face.FaceAttributes.FacialHair.Sideburns > 0 ? "Yes" : "No"));
-				Debug.Log(string.Format("[Main] extractFace | Gender: {0}", face.FaceAttributes.Gender));
-				Debug.Log(string.Format("[Main] extractFace | Glasses: {0}", face.FaceAttributes.Glasses));
-
-				// Get hair color
-				Hair hair = face.FaceAttributes.Hair;
-				string color = null;
-				if (hair.HairColor.Count == 0)
-				{
-					if (hair.Invisible)
-					{
-						color = "Invisible";
-					}
-					else
-					{
-						color = "Bald";
-					}
-				}
-
-				HairColorType returnColor = HairColorType.Unknown;
-				double maxConfidence = 0.0f;
-				foreach (HairColor hairColor in hair.HairColor)
-				{
-					if (hairColor.Confidence <= maxConfidence)
-					{
-						continue;
-					}
-
-					maxConfidence = hairColor.Confidence;
-					returnColor = hairColor.Color;
-					color = returnColor.ToString();
-				}
-
-				Debug.Log(string.Format("[Main] extractFace | Hair: {0}", color));
-
-				// Get more attributes
-				Debug.Log(string.Format("[Main] extractFace | HeadPose: Pitch: {0}, Roll: {1}, Yaw: {2}",
-					Math.Round(face.FaceAttributes.HeadPose.Pitch, 2),
-					Math.Round(face.FaceAttributes.HeadPose.Roll, 2),
-					Math.Round(face.FaceAttributes.HeadPose.Yaw, 2)));
-				Debug.Log(string.Format("[Main] extractFace | Makeup: {0}", (face.FaceAttributes.Makeup.EyeMakeup || face.FaceAttributes.Makeup.LipMakeup) ? "Yes" : "No"));
-				Debug.Log(string.Format("[Main] extractFace | Noise: {0}", face.FaceAttributes.Noise.NoiseLevel));
-				Debug.Log(string.Format("[Main] extractFace | Occlusion: EyeOccluded: {0}, ForeheadOccluded: {1}, MouthOccluded: {2}",
-					(face.FaceAttributes.Occlusion.EyeOccluded ? "Yes" : "No"),
-					(face.FaceAttributes.Occlusion.ForeheadOccluded ? "Yes" : "No"),
-					(face.FaceAttributes.Occlusion.MouthOccluded ? "Yes" : "No")));
-				Debug.Log(string.Format("[Main] extractFace | Smile: {0}", face.FaceAttributes.Smile));
-
-
-			}
-
-			Debug.Log(string.Format("[Main] extractFace | timestemp: {0:F8}", Utils.getCurrentTimestamp() - start_time));
-		}
-	}
-
-	public static async Task extractFaceWithStream(IFaceClient client)
-	{
-		Debug.Log(string.Format("[Main] extractFaceWithStream"));
-
-		// Create a list of images
-		List<string> imageFileNames = new List<string>
-		{
-			"detection1.jpg",    // single female with glasses
-			// "detection2.jpg", // (optional: single man)
-			// "detection3.jpg", // (optional: single male construction worker)
-			// "detection4.jpg", // (optional: 3 people at cafe, 1 is blurred)
-			"detection5.jpg",    // family, woman child man
-			"detection6.jpg"     // elderly couple, male female
-		};
-
-		IList<FaceAttributeType> return_face_attributes = new List<FaceAttributeType> {
-				FaceAttributeType.Accessories,
-				FaceAttributeType.Age,
-				FaceAttributeType.Blur,
-				FaceAttributeType.Emotion,
-				FaceAttributeType.Exposure,
-				FaceAttributeType.FacialHair,
-				FaceAttributeType.Gender,
-				FaceAttributeType.Glasses,
-				FaceAttributeType.Hair,
-				FaceAttributeType.HeadPose,
-				FaceAttributeType.Makeup,
-				FaceAttributeType.Noise,
-				FaceAttributeType.Occlusion,
-				FaceAttributeType.Smile
-		};
-
-		// 儲存偵測到的臉部列表
-		IList<DetectedFace> detectedFaces;
-
-		float start_time;
-		foreach (var imageFileName in imageFileNames)
-		{
-			start_time = Utils.getCurrentTimestamp();
-
-			// Detect faces with all attributes from image url.			
-			//detectedFaces = await client.Face.DetectWithUrlAsync(
-			//		string.Format("{0}{1}", url, imageFileName),
-			//		returnFaceAttributes: return_face_attributes,
-			//		recognitionModel: recognition_model);
-
-			using(Stream image = File.OpenRead(Path.Combine(Application.streamingAssetsPath, "image", imageFileName)))
-			{
-				detectedFaces = await Utils.extractWithStreamAsync(client, image, return_face_attributes);
-			}
-
-			Debug.Log(string.Format("[Main] extractFaceWithStream | {0} face(s) detected from image {1}.",
-				detectedFaces.Count, imageFileName));
-
-			Debug.Log(string.Format("[Main] extractFaceWithStream | imageFileName: {0}", imageFileName));
-			await new UnityEngine.WaitForSecondsRealtime(Time.deltaTime);
-
-			// 剖析每個偵測到的臉部，並列印屬性資料。
-			// Parse and print all attributes of each detected face.
-			foreach (var face in detectedFaces)
-			{
-
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Face attributes for {0}:", imageFileName));
-
-				// Get bounding box of the faces
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Rectangle(Left/Top/Width/Height): {0}, {1}, {2}, {3}",
-					face.FaceRectangle.Left, face.FaceRectangle.Top, face.FaceRectangle.Width, face.FaceRectangle.Height));
-
-				// Get accessories of the faces
-				List<Accessory> accessoriesList = (List<Accessory>)face.FaceAttributes.Accessories;
-				int count = face.FaceAttributes.Accessories.Count;
-				string accessory;
-				string[] accessoryArray = new string[count];
-				if (count == 0)
-				{
-					accessory = "NoAccessories";
-				}
-				else
-				{
-					for (int i = 0; i < count; ++i)
-					{
-						accessoryArray[i] = accessoriesList[i].Type.ToString();
-					}
-
-					accessory = string.Join(",", accessoryArray);
-				}
-
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Accessories: {0}", accessory));
-
-				// Get face other attributes
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Age: {0}", face.FaceAttributes.Age));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Blur: {0}", face.FaceAttributes.Blur.BlurLevel));
-
-				// Get emotion on the face
-				string emotionType = string.Empty;
-				double emotionValue = 0.0;
-				Emotion emotion = face.FaceAttributes.Emotion;
-
-				// emotion 下的各個情緒，變數類型為 double
-				if (emotion.Anger > emotionValue)
-				{
-					emotionValue = emotion.Anger;
-					emotionType = "Anger";
-				}
-
-				if (emotion.Contempt > emotionValue)
-				{
-					emotionValue = emotion.Contempt;
-					emotionType = "Contempt";
-				}
-
-				if (emotion.Disgust > emotionValue)
-				{
-					emotionValue = emotion.Disgust;
-					emotionType = "Disgust";
-				}
-
-				if (emotion.Fear > emotionValue)
-				{
-					emotionValue = emotion.Fear;
-					emotionType = "Fear";
-				}
-
-				if (emotion.Happiness > emotionValue)
-				{
-					emotionValue = emotion.Happiness;
-					emotionType = "Happiness";
-				}
-
-				if (emotion.Neutral > emotionValue)
-				{
-					emotionValue = emotion.Neutral;
-					emotionType = "Neutral";
-				}
-
-				if (emotion.Sadness > emotionValue)
-				{
-					emotionValue = emotion.Sadness;
-					emotionType = "Sadness";
-				}
-
-				if (emotion.Surprise > emotionValue)
-				{
-					emotionType = "Surprise";
-				}
-
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Emotion: {0}", emotionType));
-
-				// Get more face attributes
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Exposure: {0}", face.FaceAttributes.Exposure.ExposureLevel));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | FacialHair: {0}", face.FaceAttributes.FacialHair.Moustache + face.FaceAttributes.FacialHair.Beard + face.FaceAttributes.FacialHair.Sideburns > 0 ? "Yes" : "No"));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Gender: {0}", face.FaceAttributes.Gender));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Glasses: {0}", face.FaceAttributes.Glasses));
-
-				// Get hair color
-				Hair hair = face.FaceAttributes.Hair;
-				string color = null;
-				if (hair.HairColor.Count == 0)
-				{
-					if (hair.Invisible)
-					{
-						color = "Invisible";
-					}
-					else
-					{
-						color = "Bald";
-					}
-				}
-
-				HairColorType returnColor = HairColorType.Unknown;
-				double maxConfidence = 0.0f;
-				foreach (HairColor hairColor in hair.HairColor)
-				{
-					if (hairColor.Confidence <= maxConfidence)
-					{
-						continue;
-					}
-
-					maxConfidence = hairColor.Confidence;
-					returnColor = hairColor.Color;
-					color = returnColor.ToString();
-				}
-
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Hair: {0}", color));
-
-				// Get more attributes
-				Debug.Log(string.Format("[Main] extractFaceWithStream | HeadPose: Pitch: {0}, Roll: {1}, Yaw: {2}",
-					Math.Round(face.FaceAttributes.HeadPose.Pitch, 2),
-					Math.Round(face.FaceAttributes.HeadPose.Roll, 2),
-					Math.Round(face.FaceAttributes.HeadPose.Yaw, 2)));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Makeup: {0}", (face.FaceAttributes.Makeup.EyeMakeup || face.FaceAttributes.Makeup.LipMakeup) ? "Yes" : "No"));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Noise: {0}", face.FaceAttributes.Noise.NoiseLevel));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Occlusion: EyeOccluded: {0}, ForeheadOccluded: {1}, MouthOccluded: {2}",
-					(face.FaceAttributes.Occlusion.EyeOccluded ? "Yes" : "No"),
-					(face.FaceAttributes.Occlusion.ForeheadOccluded ? "Yes" : "No"),
-					(face.FaceAttributes.Occlusion.MouthOccluded ? "Yes" : "No")));
-				Debug.Log(string.Format("[Main] extractFaceWithStream | Smile: {0}", face.FaceAttributes.Smile));
-
-
-			}
-
-			Debug.Log(string.Format("[Main] extractFaceWithStream | timestemp: {0:F8}", Utils.getCurrentTimestamp() - start_time));
-		}
-	}
-
 	#region 尋找類似臉部
 	/* 下列程式碼會取得一個偵測到的臉部 (來源)，並搜尋一組其他臉部 (目標) 來尋找相符臉部。
 	 * 若找到相符的臉部，便會將相符臉部的識別碼列印到主控台。
@@ -796,7 +404,7 @@ public class Main : MonoBehaviour
 		foreach (var targetImageFileName in targetImageFileNames)
 		{
 			start_time = Utils.getCurrentTimestamp();
-			
+
 			// Detect faces from target image url.
 			full_url = string.Format("{0}{1}", url, targetImageFileName);
 			var faces = await DetectFaceRecognize(client, full_url, RECOGNITION_MODEL1);
@@ -844,10 +452,6 @@ public class Main : MonoBehaviour
 	#endregion
 
 	/*
-	 * END - FIND SIMILAR 
-	 */
-
-	/*
 	 * VERIFY
 	 * The Verify operation takes a face ID from DetectedFace or PersistedFace and either another face ID 
 	 * or a Person object and determines whether they belong to the same person. If you pass in a Person object, 
@@ -856,7 +460,7 @@ public class Main : MonoBehaviour
 	public static async Task Verify(IFaceClient client, string url, string recognitionModel02)
 	{
 		Debug.Log("========VERIFY========");
-		
+
 
 		List<string> targetImageFileNames = new List<string> { "Family1-Dad1.jpg", "Family1-Dad2.jpg" };
 		string sourceImageFileName1 = "Family1-Dad3.jpg";
@@ -896,11 +500,8 @@ public class Main : MonoBehaviour
 				? $"Faces from {sourceImageFileName2} & {targetImageFileNames[0]} are of the same (Negative) person, similarity confidence: {verifyResult2.Confidence}."
 				: $"Faces from {sourceImageFileName2} & {targetImageFileNames[0]} are of different (Positive) persons, similarity confidence: {verifyResult2.Confidence}.");
 
-		
+
 	}
-	/*
-	 * END - VERIFY 
-	 */
 
 	/*
 	 * IDENTIFY FACES  此方法會執行識別作業。
@@ -913,10 +514,11 @@ public class Main : MonoBehaviour
 	{
 		Debug.Log(string.Format("[Main] IdentifyInPersonGroup"));
 
+		#region Create PersonGroup
 		// Create a dictionary for all your images, grouping similar ones under the same key.
 		// 將人員的名稱與範例影像產生關聯。
 		Dictionary<string, string[]> personDictionary = new Dictionary<string, string[]>
-		{ 
+		{
 			{ "Family1-Dad", new[] { "Family1-Dad1.jpg", "Family1-Dad2.jpg" } },
 			{ "Family1-Mom", new[] { "Family1-Mom1.jpg", "Family1-Mom2.jpg" } },
 			{ "Family1-Son", new[] { "Family1-Son1.jpg", "Family1-Son2.jpg" } },
@@ -925,7 +527,6 @@ public class Main : MonoBehaviour
 			{ "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
 		};
 
-		#region Create PersonGroup
 		/* 在字典中為每個人建立 Person 物件，並從適當的影像加入臉部資料。 
 		 * 每個 Person 物件都會透過其唯一的識別碼字串(personGroupId)，與相同的 PersonGroup 產生關聯。
 		 */
@@ -933,7 +534,7 @@ public class Main : MonoBehaviour
 		Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Create a person group ({0})", personGroupId));
 
 		// This is solely for the snapshot operations example
-		sourcePersonGroup = personGroupId; 
+		sourcePersonGroup = personGroupId;
 
 		// A person group is the container of the uploaded person data, including face images and face recognition features.
 		await client.PersonGroup.CreateAsync(personGroupId, personGroupId, recognitionModel: recognitionModel);
@@ -943,6 +544,8 @@ public class Main : MonoBehaviour
 		{
 			// Limit TPS
 			await Task.Delay(250);
+
+			// 取得 PersonGroup 裡面的 Person
 			Person person = await client.PersonGroupPerson.CreateAsync(personGroupId: personGroupId, name: groupedFace);
 			Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Create a person group person '{0}'.", groupedFace));
 
@@ -953,6 +556,7 @@ public class Main : MonoBehaviour
 				Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Add face to the person group person({0}) " +
 					"from image {1}", groupedFace, similarImage));
 
+				// AddFaceFromStreamAsync
 				PersistedFace face = await client.PersonGroupPerson.AddFaceFromUrlAsync(personGroupId, person.PersonId,
 					string.Format("{0}{1}", url, similarImage), similarImage);
 			}
@@ -1012,9 +616,9 @@ public class Main : MonoBehaviour
 			Person person = await client.PersonGroupPerson.GetAsync(personGroupId, identifyResult.Candidates[0].PersonId);
 
 			Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Person '{0}' is identified for face " +
-				"in: {1} - {2},  confidence: {3}.", 
+				"in: {1} - {2},  confidence: {3}.",
 				person.Name, sourceImageFileName, identifyResult.FaceId, identifyResult.Candidates[0].Confidence));
-		} 
+		}
 		#endregion
 	}
 
@@ -1030,18 +634,19 @@ public class Main : MonoBehaviour
 	public static async Task LargePersonGroup(IFaceClient client, string url, string recognitionModel)
 	{
 		Debug.Log("========LARGE PERSON GROUP========");
-		
+
 
 		// Create a dictionary for all your images, grouping similar ones under the same key.
 		Dictionary<string, string[]> personDictionary =
 		new Dictionary<string, string[]>
-			{ { "Family1-Dad", new[] { "Family1-Dad1.jpg", "Family1-Dad2.jpg" } },
-					  { "Family1-Mom", new[] { "Family1-Mom1.jpg", "Family1-Mom2.jpg" } },
-					  { "Family1-Son", new[] { "Family1-Son1.jpg", "Family1-Son2.jpg" } },
-					  { "Family1-Daughter", new[] { "Family1-Daughter1.jpg", "Family1-Daughter2.jpg" } },
-					  { "Family2-Lady", new[] { "Family2-Lady1.jpg", "Family2-Lady2.jpg" } },
-					  { "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
-			};
+		{ 
+			{ "Family1-Dad", new[] { "Family1-Dad1.jpg", "Family1-Dad2.jpg" } },
+			{ "Family1-Mom", new[] { "Family1-Mom1.jpg", "Family1-Mom2.jpg" } },
+			{ "Family1-Son", new[] { "Family1-Son1.jpg", "Family1-Son2.jpg" } },
+			{ "Family1-Daughter", new[] { "Family1-Daughter1.jpg", "Family1-Daughter2.jpg" } },
+			{ "Family2-Lady", new[] { "Family2-Lady1.jpg", "Family2-Lady2.jpg" } },
+			{ "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
+		};
 
 		// Create a large person group ID. 
 		string largePersonGroupId = Guid.NewGuid().ToString();
@@ -1059,7 +664,7 @@ public class Main : MonoBehaviour
 			await Task.Delay(250);
 
 			Person personLarge = await client.LargePersonGroupPerson.CreateAsync(largePersonGroupId, groupedFace);
-			
+
 			Debug.Log($"Create a large person group person '{groupedFace}' ({personLarge.PersonId}).");
 
 			// Store these IDs for later retrieval
@@ -1075,7 +680,7 @@ public class Main : MonoBehaviour
 		}
 
 		// Start to train the large person group.
-		
+
 		Debug.Log($"Train large person group {largePersonGroupId}.");
 		await client.LargePersonGroup.TrainAsync(largePersonGroupId);
 
@@ -1087,7 +692,7 @@ public class Main : MonoBehaviour
 			Debug.Log($"Training status: {trainingStatus.Status}.");
 			if (trainingStatus.Status == TrainingStatusType.Succeeded) { break; }
 		}
-		
+
 
 		// Now that we have created and trained a large person group, we can retrieve data from it.
 		// Get list of persons and retrieve data, starting at the first Person ID in previously saved list.
@@ -1101,12 +706,12 @@ public class Main : MonoBehaviour
 				Debug.Log($"The person '{person.Name}' has an image with ID: {pFaceId}");
 			}
 		}
-		
+
 
 		// After testing, delete the large person group, PersonGroupPersons also get deleted.
 		await client.LargePersonGroup.DeleteAsync(largePersonGroupId);
 		Debug.Log($"Deleted the large person group {largePersonGroupId}.");
-		
+
 	}
 	/*
 	 * END - LARGE PERSON GROUP
@@ -1121,7 +726,7 @@ public class Main : MonoBehaviour
 	public static async Task Group(IFaceClient client, string url, string RECOGNITION_MODEL1)
 	{
 		Debug.Log("========GROUP FACES========");
-		
+
 
 		// Create list of image names
 		List<string> imageFileNames = new List<string>
@@ -1147,7 +752,7 @@ public class Main : MonoBehaviour
 			faceIds.Add(detectedFaces[0].FaceId.Value);
 			faces.Add(detectedFaces[0].FaceId.ToString(), imageFileName);
 		}
-		
+
 		// Group the faces. Grouping result is a group collection, each group contains similar faces.
 		var groupResult = await client.Face.GroupAsync(faceIds);
 
@@ -1166,7 +771,7 @@ public class Main : MonoBehaviour
 			foreach (var faceId in groupResult.MessyGroup) { Console.Write($"{faces[faceId.ToString()]} "); }
 			Debug.Log(".");
 		}
-		
+
 	}
 	/*
 	 * END - GROUP FACES
@@ -1180,7 +785,7 @@ public class Main : MonoBehaviour
 	public static async Task FaceListOperations(IFaceClient client, string baseUrl)
 	{
 		Debug.Log("========FACELIST OPERATIONS========");
-		
+
 
 		const string FaceListId = "myfacelistid_001";
 		const string FaceListName = "MyFaceListName";
@@ -1206,7 +811,7 @@ public class Main : MonoBehaviour
 
 		// Print the face list
 		Debug.Log("Face IDs from the face list: ");
-		
+
 
 		// List the IDs of each stored image
 		FaceList faceList = await client.FaceList.GetAsync(FaceListId);
@@ -1218,9 +823,9 @@ public class Main : MonoBehaviour
 
 		// Delete the face list, for repetitive testing purposes (cannot recreate list with same name).
 		await client.FaceList.DeleteAsync(FaceListId);
-		
+
 		Debug.Log("Deleted the face list.");
-		
+
 	}
 	/*
 	 * END - FACELIST OPERATIONS
@@ -1234,7 +839,7 @@ public class Main : MonoBehaviour
 	public static async Task LargeFaceListOperations(IFaceClient client, string baseUrl)
 	{
 		Debug.Log("======== LARGE FACELIST OPERATIONS========");
-		
+
 
 		const string LargeFaceListId = "mylargefacelistid_001"; // must be lowercase, 0-9, or "_"
 		const string LargeFaceListName = "MyLargeFaceListName";
@@ -1292,9 +897,9 @@ public class Main : MonoBehaviour
 		}
 
 		// Print the large face list
-		
+
 		Debug.Log("Face IDs from the large face list: ");
-		
+
 		Parallel.ForEach(
 				await client.LargeFaceList.ListFacesAsync(LargeFaceListId),
 				faceId =>
@@ -1305,9 +910,9 @@ public class Main : MonoBehaviour
 
 		// Delete the large face list, for repetitive testing purposes (cannot recreate list with same name).
 		await client.LargeFaceList.DeleteAsync(LargeFaceListId);
-		
+
 		Debug.Log("Deleted the large face list.");
-		
+
 	}
 	/*
 	* END - LARGE FACELIST OPERATIONS
@@ -1328,7 +933,7 @@ public class Main : MonoBehaviour
 		// Take a snapshot for the person group that was previously created in your source region.
 		// add targetAzureId to this array if your target ID is different from your source ID.
 		var takeSnapshotResult = await clientSource.Snapshot.TakeAsync(
-			SnapshotObjectType.PersonGroup, personGroupId, new[] { azureId }); 
+			SnapshotObjectType.PersonGroup, personGroupId, new[] { azureId });
 
 		// Get operation id from response for tracking the progress of snapshot taking.
 		var operationId = Guid.Parse(takeSnapshotResult.OperationLocation.Split('/')[2]);
@@ -1370,9 +975,9 @@ public class Main : MonoBehaviour
 				operationStatus = await clientSource.Snapshot.GetOperationStatusAsync(applyOperationId);
 				Debug.Log($"Operation Status: {operationStatus.Status}");
 			}
-			while (operationStatus.Status != OperationStatusType.Succeeded && 
+			while (operationStatus.Status != OperationStatusType.Succeeded &&
 			operationStatus.Status != OperationStatusType.Failed);
-			
+
 			// Confirm location of the target resource location, with its ID.
 			Debug.Log(string.Format("Person group in new region: {0}", newPersonGroupId));
 			Debug.Log("Applying snapshot... Done");
@@ -1389,9 +994,344 @@ public class Main : MonoBehaviour
 
 	/* 清除資源
 	 * 如果您想要清除和移除認知服務訂用帳戶，則可以刪除資源或資源群組。 刪除資源群組也會刪除其關聯的任何其他資源。*/
-	public static async Task DeletePersonGroup(IFaceClient client, String personGroupId)
+	public static async Task deletePersonGroup(IFaceClient client, string group_id)
 	{
-		await client.PersonGroup.DeleteAsync(personGroupId);
-		Debug.Log($"Deleted the person group {personGroupId}.");
+		await client.PersonGroup.DeleteAsync(group_id);
+		Debug.Log(string.Format("Deleted the person group {0}.", group_id));
 	}
+	#endregion
+
+	#region My demo code
+	#region Extract face
+	public async Task extractFaceWithUrlDemo(IFaceClient client)
+	{
+		// Create a list of images
+		List<string> image_names = new List<string>
+		{
+			"detection1.jpg",    // single female with glasses
+			// "detection2.jpg", // (optional: single man)
+			// "detection3.jpg", // (optional: single male construction worker)
+			// "detection4.jpg", // (optional: 3 people at cafe, 1 is blurred)
+			"detection5.jpg",    // family, woman child man
+			"detection6.jpg"     // elderly couple, male female
+		};
+
+		foreach (string image_name in image_names)
+		{
+			Debug.Log(string.Format("[Main] extractFaceWithUrlDemo | {0}", image_name));
+			await Utils.extractFaceWithUrl(client, string.Format("{0}{1}", URL, image_name));
+			Debug.Log("[Main] extractFaceWithUrlDemo | ==========");
+		}
+	}
+
+	public async Task extractFaceWithStreamDemo(IFaceClient client)
+	{
+		List<string> image_names = new List<string>
+		{
+			"detection1.jpg",    // single female with glasses
+			// "detection2.jpg", // (optional: single man)
+			// "detection3.jpg", // (optional: single male construction worker)
+			// "detection4.jpg", // (optional: 3 people at cafe, 1 is blurred)
+			"detection5.jpg",    // family, woman child man
+			"detection6.jpg"     // elderly couple, male female
+		};
+
+		foreach (string image_name in image_names)
+		{
+			Stream image = File.OpenRead(Path.Combine(Application.streamingAssetsPath, "image", image_name));
+			Debug.Log(string.Format("[Main] extractFaceWithStreamDemo | {0}", image_name));
+			await Utils.extractFaceWithStream(client, image);
+			Debug.Log(string.Format("[Main] extractFaceWithStreamDemo | ==============="));
+		}
+	}
+	#endregion
+
+	#region PersonGroup
+	public async Task deletePersonFromGroupAsyncDemo(IFaceClient client, string group_id)
+	{
+		string[] delete_target = { /*"Family1-Dad", "Family1-Mom", "Family1-Son", "Family1-Daughter", "Family2-Lady",*/ "Family2-Man" };
+
+		foreach(string target in delete_target)
+		{
+			await deletePersonFromGroupAsync(client, group_id, target);
+		}
+	}
+
+	public static async Task deletePersonFromGroupAsync(IFaceClient client, string group_id, string person_name)
+	{
+		// 取得原有 Person 清單
+		List<Person> origin_person = await Utils.getPersons(client, group_id);
+
+		foreach(Person person in origin_person)
+		{
+			if (person.Name.Equals(person_name))
+			{
+				Debug.Log(string.Format("[Main] deletePersonFromGroupAsync | Delete {0}, id: {1}", person.Name, person.PersonId));
+				await client.PersonGroupPerson.DeleteAsync(group_id, person.PersonId);
+				break;
+			}
+		}
+	}
+
+	public void trainPersonGroupWithStreamAsyncDemo(IFaceClient client, string group_id) {
+		Dictionary<string, string[]> person_dict = new Dictionary<string, string[]> {
+			//{ "Family1-Dad", new[] { "Family1-Dad1.jpg", "Family1-Dad2.jpg" } },
+			//{ "Family1-Mom", new[] { "Family1-Mom1.jpg", "Family1-Mom2.jpg" } },
+			//{ "Family1-Son", new[] { "Family1-Son1.jpg", "Family1-Son2.jpg" } },
+			//{ "Family1-Daughter", new[] { "Family1-Daughter1.jpg", "Family1-Daughter2.jpg" } },
+			//{ "Family2-Lady", new[] { "Family2-Lady1.jpg", "Family2-Lady2.jpg" } },
+			{ "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
+		};
+
+		_ = trainPersonGroupWithStreamAsync(client, group_id, person_dict);
+	}
+
+	public static async Task trainPersonGroupWithStreamAsync(IFaceClient client, string group_id, Dictionary<string, string[]> person_dict)
+	{
+		// 當前的 PersonGroup 的唯一識別碼
+		Debug.Log(string.Format("[Main] addPersonGroupWithStreamAsync | Get a person group ({0})", group_id));
+
+		// 取得原有 Person 清單
+		List<Person> origin_person = await Utils.getPersons(client, group_id);
+		bool in_person_list = false;
+
+		// The similar faces will be grouped into a single person group person.
+		string[] image_paths;
+		Stream image;
+		PersistedFace face;
+
+		foreach (var person_name in person_dict.Keys)
+		{
+			// 每個 Person 物件都會透過其唯一的識別碼字串(group_id)，與同一個 PersonGroup 產生關聯。
+			Person person = new Person();
+			foreach (Person p in origin_person)
+			{
+				if (p.Name.Equals(person_name))
+				{
+					person = p;
+					in_person_list = true;
+					break;
+				}
+			}
+
+			// Limit TPS (避免請求頻率過高)
+			await Task.Delay(250);
+
+			// 若原本就存在 PersonGroup 當中
+			if (in_person_list)
+			{
+				// 根據 PersonId 取得 Person 物件
+				person = await client.PersonGroupPerson.GetAsync(personGroupId: group_id, personId: person.PersonId);
+				Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Get a person in group person '{0}'.", person_name));
+			}
+			// 原本不存在 PersonGroup 當中
+			else
+			{
+				// 於 PersonGroup 裡面建立 Person 並取得建立好的物件
+				person = await client.PersonGroupPerson.CreateAsync(personGroupId: group_id, name: person_name);
+				Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person into group person '{0}'.", person_name));
+			}
+
+			// 將同一 Person 的臉部資料，加入 Person 當中
+			image_paths = person_dict[person_name];
+			foreach (string image_path in image_paths)
+			{
+				Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Add face to the person group person({0}) " +
+					"from image {1}", person_name, image_path));
+
+				// AddFaceFromStreamAsync
+				image = File.OpenRead(Path.Combine(Application.streamingAssetsPath, "image", image_path));
+				face = await client.PersonGroupPerson.AddFaceFromStreamAsync(
+					group_id, person.PersonId, image, image_path);
+			}
+
+			in_person_list = false;
+		}
+
+		await trainPersonGroupAsync(client, group_id);
+	}
+
+	public async Task identifyInPersonGroup(IFaceClient client, string group_id, string image_name)
+	{
+		string path = Path.Combine(Application.streamingAssetsPath, "image", image_name);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | path: {0}", path));
+		Stream image = File.OpenRead(path);
+		List<Tuple<string, double>> identify_results = await identifyPersonWithStreamAsync(client, group_id, image);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | #identify_results: {0}", identify_results.Count));
+		string name;
+		double confidence;
+
+		foreach (var result in identify_results)
+		{
+			name = result.Item1;
+			confidence = result.Item2;
+			Debug.Log(string.Format("[Main] identifyInPersonGroup | Person {0} in {1}, confidence: {2:F4}",
+				name, image_name, confidence));
+		}
+
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | Ending"));
+	}
+
+	void identifyInPersonGroupWithTrainingDemo(IFaceClient client)
+	{
+		Dictionary<string, string[]> person_dict = new Dictionary<string, string[]> {
+			{ "Family1-Dad", new[] { "Family1-Dad1.jpg", "Family1-Dad2.jpg" } },
+			{ "Family1-Mom", new[] { "Family1-Mom1.jpg", "Family1-Mom2.jpg" } },
+			{ "Family1-Son", new[] { "Family1-Son1.jpg", "Family1-Son2.jpg" } },
+			{ "Family1-Daughter", new[] { "Family1-Daughter1.jpg", "Family1-Daughter2.jpg" } },
+			{ "Family2-Lady", new[] { "Family2-Lady1.jpg", "Family2-Lady2.jpg" } },
+			//{ "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
+		};
+
+		string image_name = "identification1.jpg";
+
+		_ = identifyInPersonGroupWithTraining(client, person_dict, image_name);
+	}
+
+	public async Task identifyInPersonGroupWithTraining(IFaceClient client, Dictionary<string, string[]> person_dict, string image_name)
+	{
+		string group_id = await createPersonGroupWithStreamAsync(client, person_dict);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | group_id: {0}", group_id));
+
+		await trainPersonGroupAsync(client, group_id);
+
+		string path = Path.Combine(Application.streamingAssetsPath, "image", image_name);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | path: {0}", path));
+		Stream image = File.OpenRead(path);
+		List<Tuple<string, double>> identify_results = await identifyPersonWithStreamAsync(client, group_id, image);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | #identify_results: {0}", identify_results.Count));
+		string name;
+		double confidence;
+
+		foreach (var result in identify_results)
+		{
+			name = result.Item1;
+			confidence = result.Item2;
+			Debug.Log(string.Format("[Main] identifyInPersonGroup | Person {0} in {1}, confidence: {2:F4}",
+				name, image_name, confidence));
+		}
+
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | Ending"));
+	}
+
+	/// <summary>
+	/// 建立 PersonGroup
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="person_dict">將人物名稱(key)與相對應的圖片名稱(value)做映射</param>
+	/// <returns></returns>
+	public static async Task<string> createPersonGroupWithStreamAsync(IFaceClient client, Dictionary<string, string[]> person_dict)
+	{
+		// 當前創建的 PersonGroup 的唯一識別碼
+		string group_id = Guid.NewGuid().ToString();
+		Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person group ({0})", group_id));
+
+		// 實際創建的 PersonGroup
+		// PersonGroup 為裝載 Person 數據的容器(包含臉部圖片及用於識別的特徵)
+		await client.PersonGroup.CreateAsync(group_id, group_id, recognitionModel: RecognitionModel.Recognition01);
+
+		// The similar faces will be grouped into a single person group person.
+		string[] image_paths;
+		Stream image;
+		PersistedFace face;
+
+		foreach (var person_name in person_dict.Keys)
+		{
+			// Limit TPS (避免請求頻率過高)
+			await Task.Delay(250);
+
+			// 每個 Person 物件都會透過其唯一的識別碼字串(group_id)，與同一個 PersonGroup 產生關聯。
+			// 於 PersonGroup 裡面建立 Person 並取得建立好的物件
+			Person person = await client.PersonGroupPerson.CreateAsync(personGroupId: group_id, name: person_name);
+			Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person group person '{0}'.", person_name));
+
+			// 將同一 Person 的臉部資料，加入 Person 當中
+			image_paths = person_dict[person_name];
+			foreach (string image_path in image_paths)
+			{
+				Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Add face to the person group person({0}) " +
+					"from image {1}", person_name, image_path));
+
+				// AddFaceFromStreamAsync
+				image = File.OpenRead(Path.Combine(Application.streamingAssetsPath, "image", image_path));
+				face = await client.PersonGroupPerson.AddFaceFromStreamAsync(
+					group_id, person.PersonId, image, image_path);
+			}
+		}
+
+		// TODO: 寫出 group_id
+
+		return group_id;
+	}
+
+	public static async Task trainPersonGroupAsync(IFaceClient client, string group_id)
+	{
+		/* 訓練 PersonGroup
+		 * 必須訓練 PersonGroup，以識別與其每一個 Person 物件相關聯的視覺特徵。
+		 * 下列程式碼會呼叫非同步訓練方法並輪詢結果。 */
+		Debug.Log(string.Format("[Main] trainPersonGroupAsync | Train person group {0}", group_id));
+		await client.PersonGroup.TrainAsync(group_id);
+
+		// Wait until the training is completed.
+		TrainingStatus training_status;
+		while (true)
+		{
+			await Task.Delay(1000);
+
+			// 取得訓練狀態
+			training_status = await client.PersonGroup.GetTrainingStatusAsync(group_id);
+			Debug.Log(string.Format("[Main] trainPersonGroupAsync | Training status: {0}.", training_status.Status));
+
+			if (training_status.Status == TrainingStatusType.Succeeded)
+			{
+				break;
+			}
+		}
+	}
+
+	public static async Task<List<DetectedFace>> detectWithStreamAsync(IFaceClient client, Stream image)
+	{
+		IList<DetectedFace> detected_faces = 
+			await client.Face.DetectWithStreamAsync(image, recognitionModel: RecognitionModel.Recognition01);
+
+		return detected_faces.ToList();
+	}
+
+	public static async Task<List<Tuple<string, double>>> identifyPersonWithStreamAsync(IFaceClient client, string group_id, Stream image)
+	{
+		List<DetectedFace> detected_faces = await detectWithStreamAsync(client, image);
+
+		// 將偵測到的臉部的 ID 加入 face_ids 陣列當中
+		List<Guid> face_ids = new List<Guid>();
+		foreach (DetectedFace face in detected_faces)
+		{
+			face_ids.Add(face.FaceId.Value);
+		}
+
+		// 輸入臉部 ID 列表(face_ids)，IdentifyAsync 當中會藉由此 ID 去取用臉部資訊，
+		// 進而和 PersonGroup 當中的人臉做比對
+		IList<IdentifyResult> results = await client.Face.IdentifyAsync(face_ids, group_id);
+		List<Tuple<string, double>> identify_result = new List<Tuple<string, double>>();
+
+		foreach (IdentifyResult result in results)
+		{
+			// result.Candidates 為相似度高的候選人，取出相似可能候選第一位的 ID
+			Person person = await client.PersonGroupPerson.GetAsync(group_id, result.Candidates[0].PersonId);
+			identify_result.Add(Tuple.Create(person.Name, result.Candidates[0].Confidence));
+		}
+
+		return identify_result;
+	}
+
+	public async Task isPersonGroupExistAsync(IFaceClient client, string group_id)
+	{
+		bool is_group_exist = await Utils.isPersonGroupExist(client, group_id);
+
+		Debug.Log(string.Format("[Main] testPersonGroup {0} {1} exist.",
+			group_id, is_group_exist ? "is" : "is not"));
+	} 
+	#endregion
+	#endregion
+
+
 }
