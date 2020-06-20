@@ -74,7 +74,8 @@ public class Main : MonoBehaviour
 		//identifyInPersonGroupWithTrainingDemo(client);
 		//_ = identifyInPersonGroup(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e", image_name: "identification1.jpg");
 		//trainPersonGroupWithStreamAsyncDemo(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e");
-
+		_ = customizedPersonGroupDemo(client);
+		//appendPersonGroupWithStreamDemo(client, group_id: "c5c2dc65-8bb4-4da8-9da3-707e5184b8a7");
 		#endregion
 
 		#region IdentifyInPersonGroup
@@ -87,7 +88,7 @@ public class Main : MonoBehaviour
 		#region DeletePersonGroup
 		//// 建立了 PersonGroup，但想要將其刪除，請在程式中執行下列程式碼
 		//// sourcePersonGroup: PersonGroup 建立時產生的唯一識別碼
-		//_ = deletePersonGroup(client, group_id: "cfd499dc-6937-4068-8ee2-4fea6d60f99b");
+		//_ = deletePersonGroup(client, group_id: "b384fcd7-2300-4171-996d-19fbab9b2cf7");
 
 		// 刪除 PersonGroup 當中個別的 Person
 		//_ = deletePersonFromGroupAsyncDemo(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e");
@@ -1047,14 +1048,201 @@ public class Main : MonoBehaviour
 	#endregion
 
 	#region PersonGroup
-	public async Task deletePersonFromGroupAsyncDemo(IFaceClient client, string group_id)
+	public async Task customizedPersonGroupDemo(IFaceClient client)
 	{
-		string[] delete_target = { /*"Family1-Dad", "Family1-Mom", "Family1-Son", "Family1-Daughter", "Family2-Lady",*/ "Family2-Man" };
+		//Dictionary<string, string[]> person_dict = new Dictionary<string, string[]> {
+		//	{ "B1", new[] { "B1-1.PNG", "B1-2.PNG", "B1-3.PNG", "B1-4.PNG" } },
+		//	{ "B2", new[] { "B2-1.PNG", "B2-2.PNG", "B2-3.PNG", "B2-4.PNG" } },
+		//	{ "B3", new[] { "B3-1.PNG", "B3-2.PNG", "B3-3.PNG", "B3-4.PNG" } },
+		//	{ "B4", new[] { "B4-1.PNG", "B4-2.PNG", "B4-3.PNG", "B4-4.PNG" } },
+		//	{ "B5", new[] { "B5-1.PNG", "B5-2.PNG", "B5-3.PNG", "B5-4.PNG" } },
+		//	{ "G1", new[] { "G1-1.PNG", "G1-2.PNG", "G1-3.PNG", "G1-4.PNG" } },
+		//	{ "G2", new[] { "G2-1.PNG", "G2-2.PNG", "G2-3.PNG", "G2-4.PNG" } },
+		//	{ "G3", new[] { "G3-1.PNG", "G3-2.PNG", "G3-3.PNG", "G3-4.PNG" } },
+		//	{ "G4", new[] { "G4-1.PNG", "G4-2.PNG", "G4-3.PNG", "G4-4.PNG" } },
+		//	{ "G5", new[] { "G5-1.PNG", "G5-2.PNG", "G5-3.PNG", "G5-4.PNG" } },
+		//	//{ "MB1", new[] { "MB1-1.PNG", "MB1-2.PNG", "MB1-3.PNG", "MB1-4.PNG" } },
+		//	//{ "MG1", new[] { "MG1-1.PNG", "MG1-2.PNG", "MG1-3.PNG", "MG1-4.PNG" } }
+		//};
 
-		foreach(string target in delete_target)
+		//string group_id = await createPersonGroupWithStreamAsync(client);
+		//Debug.Log(string.Format("[Main] customizedPersonGroupDemo | group_id: {0}", group_id));
+
+		//await appendPersonGroupWithStreamAsync(client, group_id, person_dict);
+
+		string group_id = "c5c2dc65-8bb4-4da8-9da3-707e5184b8a7";
+		//await trainPersonGroupAsync(client, group_id);
+
+		//string[] images = {
+		//	"B2-5.PNG", "B3-5.PNG", "B4-5.PNG", "B5-5.PNG",
+		//	"G1-5.PNG", "G2-5.PNG", "G3-5.PNG", "G4-5.PNG", "G5-5.PNG",
+		//	"B1-5.PNG",
+		//};
+
+		//foreach (string image_name in images)
+		//{
+		//	Debug.Log(string.Format("[Main] identifyInPersonGroupWithTrainingDemo | image_name: {0}", image_name));
+		//	await identifyInPersonGroup(client, group_id, image_name);
+		//	Debug.Log("==============================");
+		//	// Limit TPS (避免請求頻率過高) 3000
+		//	Debug.Log(string.Format("Limit TPS"));
+		//	await Task.Delay(3000);
+		//}
+
+		string image_name = "G12345-5.PNG";
+		Debug.Log(string.Format("[Main] identifyInPersonGroupWithTrainingDemo | image_name: {0}", image_name));
+		await identifyInPersonGroup(client, group_id, image_name);
+
+	}
+
+	/// <summary>
+	/// 建立 PersonGroup，並返回 group_id
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="person_dict">將人物名稱(key)與相對應的圖片名稱(value)做映射</param>
+	/// <returns></returns>
+	public static async Task<string> createPersonGroupWithStreamAsync(IFaceClient client)
+	{
+		// 當前創建的 PersonGroup 的唯一識別碼
+		string group_id = Guid.NewGuid().ToString();
+		Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person group ({0})", group_id));
+
+		// 實際創建的 PersonGroup
+		// PersonGroup 為裝載 Person 數據的容器(包含臉部圖片及用於識別的特徵)
+		await client.PersonGroup.CreateAsync(group_id, group_id, recognitionModel: RecognitionModel.Recognition01);
+
+		// TODO: 寫出 group_id
+		return group_id;
+	}
+
+	public void appendPersonGroupWithStreamDemo(IFaceClient client, string group_id)
+	{
+		Dictionary<string, string[]> person_dict = new Dictionary<string, string[]> {
+			{ "B1", new[] { "B1-1.PNG", "B1-2.PNG", "B1-3.PNG", "B1-4.PNG" } },
+			{ "B2", new[] { "B2-1.PNG", "B2-2.PNG", "B2-3.PNG", "B2-4.PNG" } },
+			{ "B3", new[] { "B3-1.PNG", "B3-2.PNG", "B3-3.PNG", "B3-4.PNG" } },
+			{ "B4", new[] { "B4-1.PNG", "B4-2.PNG", "B4-3.PNG", "B4-4.PNG" } },
+			{ "B5", new[] { "B5-1.PNG", "B5-2.PNG", "B5-3.PNG", "B5-4.PNG" } },
+			{ "G1", new[] { "G1-1.PNG", "G1-2.PNG", "G1-3.PNG", "G1-4.PNG" } },
+			{ "G2", new[] { "G2-1.PNG", "G2-2.PNG", "G2-3.PNG", "G2-4.PNG" } },
+			{ "G3", new[] { "G3-1.PNG", "G3-2.PNG", "G3-3.PNG", "G3-4.PNG" } },
+			{ "G4", new[] { "G4-1.PNG", "G4-2.PNG", "G4-3.PNG", "G4-4.PNG" } },
+			{ "G5", new[] { "G5-1.PNG", "G5-2.PNG", "G5-3.PNG", "G5-4.PNG" } },
+			//{ "MB1", new[] { "MB1-1.PNG", "MB1-2.PNG", "MB1-3.PNG", "MB1-4.PNG" } },
+			//{ "MG1", new[] { "MG1-1.PNG", "MG1-2.PNG", "MG1-3.PNG", "MG1-4.PNG" } }
+		};
+
+		appendPersonGroupWithStream(client, group_id, person_dict);
+	}
+
+	public static void appendPersonGroupWithStream(IFaceClient client, string group_id, Dictionary<string, string[]> person_dict)
+	{
+		_ = appendPersonGroupWithStreamAsync(client, group_id, person_dict);
+	}
+
+	/// <summary>
+	/// 事後添加 Person 到 PersonGroup
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="group_id">PersonGroup 的唯一對應碼</param>
+	/// <param name="person_dict">要添加進 PersonGroup 的 Person 名稱及其圖片對應名稱</param>
+	/// <returns></returns>
+	public static async Task appendPersonGroupWithStreamAsync(IFaceClient client, string group_id, Dictionary<string, string[]> person_dict)
+	{
+		// The similar faces will be grouped into a single person group person.
+		string[] image_paths;
+		Stream image;
+		PersistedFace face;
+
+		// TODO: 請求頻率似乎太高了
+		foreach (var person_name in person_dict.Keys)
 		{
-			await deletePersonFromGroupAsync(client, group_id, target);
+			// 每個 Person 物件都會透過其唯一的識別碼字串(group_id)，與同一個 PersonGroup 產生關聯。
+			// 於 PersonGroup 裡面建立 Person 並取得建立好的物件
+			Person person = await client.PersonGroupPerson.CreateAsync(personGroupId: group_id, name: person_name);
+			Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person group person '{0}'.", person_name));
+
+			// 將同一 Person 的臉部資料，加入 Person 當中
+			image_paths = person_dict[person_name];
+			foreach (string image_path in image_paths)
+			{
+				Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Add face to the person group person({0}) " +
+					"from image {1}", person_name, image_path));
+
+				// AddFaceFromStreamAsync
+				image = File.OpenRead(Path.Combine(Application.streamingAssetsPath, "image", image_path));
+
+				// TODO: 能否中斷這項任務？
+				face = await client.PersonGroupPerson.AddFaceFromStreamAsync(
+					group_id, person.PersonId, image, image_path);
+
+				// Limit TPS (避免請求頻率過高) 3000
+				Debug.Log(string.Format("Limit TPS"));
+				await Task.Delay(3000);
+			}
 		}
+	}
+
+	/// <summary>
+	/// 根據 group_id 訓練對應的 PersonGroup
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="group_id">PersonGroup 的唯一對應碼</param>
+	/// <returns></returns>
+	public static async Task trainPersonGroupAsync(IFaceClient client, string group_id)
+	{
+		/* 訓練 PersonGroup
+		 * 必須訓練 PersonGroup，以識別與其每一個 Person 物件相關聯的視覺特徵。
+		 * 下列程式碼會呼叫非同步訓練方法並輪詢結果。 */
+		Debug.Log(string.Format("[Main] trainPersonGroupAsync | Train person group {0}", group_id));
+		await client.PersonGroup.TrainAsync(group_id);
+		// Limit TPS (避免請求頻率過高) 3000
+		Debug.Log(string.Format("Limit TPS"));
+		await Task.Delay(3000);
+
+		// Wait until the training is completed.
+		TrainingStatus training_status;
+		while (true)
+		{
+			await Task.Delay(1000);
+
+			// 取得訓練狀態
+			training_status = await client.PersonGroup.GetTrainingStatusAsync(group_id);
+			Debug.Log(string.Format("[Main] trainPersonGroupAsync | Training status: {0}.", training_status.Status));
+
+			if (training_status.Status == TrainingStatusType.Succeeded)
+			{
+				break;
+			}
+		}
+	}
+
+	/// <summary>
+	/// 於 group_id 對應的 PersonGroup 當中，辨識圖片中的人，並將結果印出
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="group_id">PersonGroup 的唯一對應碼</param>
+	/// <param name="image_name">要辨識的圖片名稱</param>
+	/// <returns></returns>
+	public async Task identifyInPersonGroup(IFaceClient client, string group_id, string image_name)
+	{
+		string path = Path.Combine(Application.streamingAssetsPath, "image", image_name);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | path: {0}", path));
+		Stream image = File.OpenRead(path);
+		List<Tuple<string, double>> identify_results = await identifyPersonWithStreamAsync(client, group_id, image);
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | #identify_results: {0}", identify_results.Count));
+		string name;
+		double confidence;
+
+		foreach (var result in identify_results)
+		{
+			name = result.Item1;
+			confidence = result.Item2;
+			Debug.Log(string.Format("[Main] identifyInPersonGroup | Person {0} in {1}, confidence: {2:F4}",
+				name, image_name, confidence));
+		}
+
+		Debug.Log(string.Format("[Main] identifyInPersonGroup | Ending"));
 	}
 
 	public static async Task deletePersonFromGroupAsync(IFaceClient client, string group_id, string person_name)
@@ -1062,7 +1250,7 @@ public class Main : MonoBehaviour
 		// 取得原有 Person 清單
 		List<Person> origin_person = await Utils.getPersons(client, group_id);
 
-		foreach(Person person in origin_person)
+		foreach (Person person in origin_person)
 		{
 			if (person.Name.Equals(person_name))
 			{
@@ -1073,6 +1261,18 @@ public class Main : MonoBehaviour
 		}
 	}
 
+	public async Task deletePersonFromGroupAsyncDemo(IFaceClient client, string group_id)
+	{
+		string[] delete_target = { /*"Family1-Dad", "Family1-Mom", "Family1-Son", "Family1-Daughter", "Family2-Lady",*/ "Family2-Man" };
+
+		foreach(string target in delete_target)
+		{
+			await deletePersonFromGroupAsync(client, group_id, target);
+		}
+	}
+
+	// ==================================================
+	// ==================================================
 	public void trainPersonGroupWithStreamAsyncDemo(IFaceClient client, string group_id) {
 		Dictionary<string, string[]> person_dict = new Dictionary<string, string[]> {
 			//{ "Family1-Dad", new[] { "Family1-Dad1.jpg", "Family1-Dad2.jpg" } },
@@ -1151,27 +1351,6 @@ public class Main : MonoBehaviour
 		await trainPersonGroupAsync(client, group_id);
 	}
 
-	public async Task identifyInPersonGroup(IFaceClient client, string group_id, string image_name)
-	{
-		string path = Path.Combine(Application.streamingAssetsPath, "image", image_name);
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | path: {0}", path));
-		Stream image = File.OpenRead(path);
-		List<Tuple<string, double>> identify_results = await identifyPersonWithStreamAsync(client, group_id, image);
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | #identify_results: {0}", identify_results.Count));
-		string name;
-		double confidence;
-
-		foreach (var result in identify_results)
-		{
-			name = result.Item1;
-			confidence = result.Item2;
-			Debug.Log(string.Format("[Main] identifyInPersonGroup | Person {0} in {1}, confidence: {2:F4}",
-				name, image_name, confidence));
-		}
-
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | Ending"));
-	}
-
 	void identifyInPersonGroupWithTrainingDemo(IFaceClient client)
 	{
 		Dictionary<string, string[]> person_dict = new Dictionary<string, string[]> {
@@ -1180,7 +1359,7 @@ public class Main : MonoBehaviour
 			{ "Family1-Son", new[] { "Family1-Son1.jpg", "Family1-Son2.jpg" } },
 			{ "Family1-Daughter", new[] { "Family1-Daughter1.jpg", "Family1-Daughter2.jpg" } },
 			{ "Family2-Lady", new[] { "Family2-Lady1.jpg", "Family2-Lady2.jpg" } },
-			//{ "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
+			{ "Family2-Man", new[] { "Family2-Man1.jpg", "Family2-Man2.jpg" } }
 		};
 
 		string image_name = "identification1.jpg";
@@ -1190,16 +1369,18 @@ public class Main : MonoBehaviour
 
 	public async Task identifyInPersonGroupWithTraining(IFaceClient client, Dictionary<string, string[]> person_dict, string image_name)
 	{
-		string group_id = await createPersonGroupWithStreamAsync(client, person_dict);
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | group_id: {0}", group_id));
+		string group_id = await createPersonGroupWithStreamAsync(client);
+		Debug.Log(string.Format("[Main] identifyInPersonGroupWithTraining | group_id: {0}", group_id));
+
+		await appendPersonGroupWithStreamAsync(client, group_id, person_dict);
 
 		await trainPersonGroupAsync(client, group_id);
 
 		string path = Path.Combine(Application.streamingAssetsPath, "image", image_name);
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | path: {0}", path));
+		Debug.Log(string.Format("[Main] identifyInPersonGroupWithTraining | path: {0}", path));
 		Stream image = File.OpenRead(path);
 		List<Tuple<string, double>> identify_results = await identifyPersonWithStreamAsync(client, group_id, image);
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | #identify_results: {0}", identify_results.Count));
+		Debug.Log(string.Format("[Main] identifyInPersonGroupWithTraining | #identify_results: {0}", identify_results.Count));
 		string name;
 		double confidence;
 
@@ -1207,99 +1388,41 @@ public class Main : MonoBehaviour
 		{
 			name = result.Item1;
 			confidence = result.Item2;
-			Debug.Log(string.Format("[Main] identifyInPersonGroup | Person {0} in {1}, confidence: {2:F4}",
+			Debug.Log(string.Format("[Main] identifyInPersonGroupWithTraining | Person {0} in {1}, confidence: {2:F4}",
 				name, image_name, confidence));
 		}
 
-		Debug.Log(string.Format("[Main] identifyInPersonGroup | Ending"));
+		Debug.Log(string.Format("[Main] identifyInPersonGroupWithTraining | Ending"));
 	}
 
 	/// <summary>
-	/// 建立 PersonGroup
+	/// 偵測臉部位置
 	/// </summary>
 	/// <param name="client"></param>
-	/// <param name="person_dict">將人物名稱(key)與相對應的圖片名稱(value)做映射</param>
+	/// <param name="image">以 Stream 型態將圖片讀入</param>
 	/// <returns></returns>
-	public static async Task<string> createPersonGroupWithStreamAsync(IFaceClient client, Dictionary<string, string[]> person_dict)
-	{
-		// 當前創建的 PersonGroup 的唯一識別碼
-		string group_id = Guid.NewGuid().ToString();
-		Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person group ({0})", group_id));
-
-		// 實際創建的 PersonGroup
-		// PersonGroup 為裝載 Person 數據的容器(包含臉部圖片及用於識別的特徵)
-		await client.PersonGroup.CreateAsync(group_id, group_id, recognitionModel: RecognitionModel.Recognition01);
-
-		// The similar faces will be grouped into a single person group person.
-		string[] image_paths;
-		Stream image;
-		PersistedFace face;
-
-		foreach (var person_name in person_dict.Keys)
-		{
-			// Limit TPS (避免請求頻率過高)
-			await Task.Delay(250);
-
-			// 每個 Person 物件都會透過其唯一的識別碼字串(group_id)，與同一個 PersonGroup 產生關聯。
-			// 於 PersonGroup 裡面建立 Person 並取得建立好的物件
-			Person person = await client.PersonGroupPerson.CreateAsync(personGroupId: group_id, name: person_name);
-			Debug.Log(string.Format("[Main] createPersonGroupWithStreamAsync | Create a person group person '{0}'.", person_name));
-
-			// 將同一 Person 的臉部資料，加入 Person 當中
-			image_paths = person_dict[person_name];
-			foreach (string image_path in image_paths)
-			{
-				Debug.Log(string.Format("[Main] IdentifyInPersonGroup | Add face to the person group person({0}) " +
-					"from image {1}", person_name, image_path));
-
-				// AddFaceFromStreamAsync
-				image = File.OpenRead(Path.Combine(Application.streamingAssetsPath, "image", image_path));
-				face = await client.PersonGroupPerson.AddFaceFromStreamAsync(
-					group_id, person.PersonId, image, image_path);
-			}
-		}
-
-		// TODO: 寫出 group_id
-
-		return group_id;
-	}
-
-	public static async Task trainPersonGroupAsync(IFaceClient client, string group_id)
-	{
-		/* 訓練 PersonGroup
-		 * 必須訓練 PersonGroup，以識別與其每一個 Person 物件相關聯的視覺特徵。
-		 * 下列程式碼會呼叫非同步訓練方法並輪詢結果。 */
-		Debug.Log(string.Format("[Main] trainPersonGroupAsync | Train person group {0}", group_id));
-		await client.PersonGroup.TrainAsync(group_id);
-
-		// Wait until the training is completed.
-		TrainingStatus training_status;
-		while (true)
-		{
-			await Task.Delay(1000);
-
-			// 取得訓練狀態
-			training_status = await client.PersonGroup.GetTrainingStatusAsync(group_id);
-			Debug.Log(string.Format("[Main] trainPersonGroupAsync | Training status: {0}.", training_status.Status));
-
-			if (training_status.Status == TrainingStatusType.Succeeded)
-			{
-				break;
-			}
-		}
-	}
-
 	public static async Task<List<DetectedFace>> detectWithStreamAsync(IFaceClient client, Stream image)
 	{
 		IList<DetectedFace> detected_faces = 
 			await client.Face.DetectWithStreamAsync(image, recognitionModel: RecognitionModel.Recognition01);
+		// Limit TPS (避免請求頻率過高) 3000
+		Debug.Log(string.Format("Limit TPS"));
+		await Task.Delay(3000);
 
 		return detected_faces.ToList();
 	}
 
+	/// <summary>
+	/// 辨識圖片中，事先註冊在 PersonGroup 中的人臉
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="group_id">PersonGroup 的唯一對應碼</param>
+	/// <param name="image">以 Stream 型態將圖片讀入</param>
+	/// <returns></returns>
 	public static async Task<List<Tuple<string, double>>> identifyPersonWithStreamAsync(IFaceClient client, string group_id, Stream image)
 	{
 		List<DetectedFace> detected_faces = await detectWithStreamAsync(client, image);
+		Debug.Log(string.Format("[Main] identifyPersonWithStreamAsync | {0} face detected.", detected_faces.Count));
 
 		// 將偵測到的臉部的 ID 加入 face_ids 陣列當中
 		List<Guid> face_ids = new List<Guid>();
@@ -1311,13 +1434,20 @@ public class Main : MonoBehaviour
 		// 輸入臉部 ID 列表(face_ids)，IdentifyAsync 當中會藉由此 ID 去取用臉部資訊，
 		// 進而和 PersonGroup 當中的人臉做比對
 		IList<IdentifyResult> results = await client.Face.IdentifyAsync(face_ids, group_id);
-		List<Tuple<string, double>> identify_result = new List<Tuple<string, double>>();
+		// Limit TPS (避免請求頻率過高) 3000
+		Debug.Log(string.Format("Limit TPS"));
+		await Task.Delay(3000);
 
+		List<Tuple<string, double>> identify_result = new List<Tuple<string, double>>();
 		foreach (IdentifyResult result in results)
 		{
 			// result.Candidates 為相似度高的候選人，取出相似可能候選第一位的 ID
 			Person person = await client.PersonGroupPerson.GetAsync(group_id, result.Candidates[0].PersonId);
 			identify_result.Add(Tuple.Create(person.Name, result.Candidates[0].Confidence));
+
+			// Limit TPS (避免請求頻率過高) 3000
+			Debug.Log(string.Format("Limit TPS"));
+			await Task.Delay(3000);
 		}
 
 		return identify_result;
