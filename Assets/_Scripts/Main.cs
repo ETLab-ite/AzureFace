@@ -74,7 +74,7 @@ public class Main : MonoBehaviour
 		//identifyInPersonGroupWithTrainingDemo(client);
 		//_ = identifyInPersonGroup(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e", image_name: "identification1.jpg");
 		//trainPersonGroupWithStreamAsyncDemo(client, group_id: "9fecd399-d395-488d-be66-7123165fcd9e");
-		_ = customizedPersonGroupDemo(client);
+		//_ = customizedPersonGroupDemo(client);
 		//appendPersonGroupWithStreamDemo(client, group_id: "c5c2dc65-8bb4-4da8-9da3-707e5184b8a7");
 		#endregion
 

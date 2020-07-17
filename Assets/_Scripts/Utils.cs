@@ -6,8 +6,10 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using System.Threading.Tasks;
 using Microsoft.Azure.CognitiveServices.Vision.Face;
-using Microsoft.Azure.CognitiveServices.Vision.Face.Models;
+using AzureModels = Microsoft.Azure.CognitiveServices.Vision.Face.Models;
 using System.Linq;
+using UnityEngine.Networking;
+using ETLab;
 
 public static class Utils
 {
@@ -18,8 +20,9 @@ public static class Utils
     }
 
 	// TODO: 考慮不同裝置的讀檔方式
-	public static void initConfigData()
+	public static void initConfigData(int config_code=0)
 	{
+#if UNITY_EDITOR
 		using (StreamReader reader = new StreamReader(ConfigData.config_path))
 		{
 			string line;
@@ -46,25 +49,82 @@ public static class Utils
 				}
 			}
 		}
+#elif UNITY_ANDROID
+		string path = string.Format("jar:file://{0}!/assets/AzureFaceConfig.txt", Application.dataPath);
+		
+		_ = initConfigDataAsync(path, config_code);
+#endif
+	}
+
+	static async Task initConfigDataAsync(string path, int config_code)
+	{
+		string config = await androidReadSvgAsync(path);
+
+		if(config == null)
+		{
+			Debug.LogError(string.Format("[Utils] loadConfigData | Can not read from Android."));
+			return;
+		}
+
+		string[] lines = config.Split('\n');
+		string[] content;
+
+		foreach (string line in lines)
+		{
+			content = line.Split(' ');
+
+			switch (content[0])
+			{
+				case "FACE_SUBSCRIPTION_KEY1":
+					ConfigData.FACE_SUBSCRIPTION_KEY1 = string.Format("{0}{1}", content[1], 51901 + config_code);
+					break;
+				case "FACE_SUBSCRIPTION_KEY2":
+					ConfigData.FACE_SUBSCRIPTION_KEY2 = string.Format("{0}{1}", content[1], 75743 + config_code);
+					break;
+				case "FACE_ENDPOINT":
+					ConfigData.FACE_ENDPOINT = content[1];
+					break;
+				default:
+					Debug.LogError(string.Format("[Utils] loadConfigData | key: {0}, value: {1}", content[0], content[1]));
+					break;
+			}
+		}
+	}
+
+	// Android 讀檔
+	static async Task<string> androidReadSvgAsync(string path)
+	{
+		var request = UnityWebRequest.Get(path);
+		Debug.Log(string.Format("[Utils] androidReadSvgAsync | path: {0}", path));
+		await request.SendWebRequest();
+		Debug.Log("request sent.");
+		while (!request.isDone && !request.isNetworkError && !request.isHttpError) { }
+
+		if (!request.isNetworkError && !request.isHttpError)
+		{
+			return request.downloadHandler.text;
+		}
+
+		return null;
 	}
 
 	#region Extract face
-	public static async Task<List<DetectedFace>> extractWithUrlAsync(IFaceClient client, string url, IList<FaceAttributeType> attributes = null)
+	public static async Task<List<AzureModels.DetectedFace>> extractWithUrlAsync(IFaceClient client, string url, IList<AzureModels.FaceAttributeType> attributes = null)
 	{
-		IList<DetectedFace> detected_faces = await client.Face.DetectWithUrlAsync(
+		IList<AzureModels.DetectedFace> detected_faces = await client.Face.DetectWithUrlAsync(
 			url,
 			returnFaceAttributes: attributes,
-			recognitionModel: RecognitionModel.Recognition02);
+			recognitionModel: AzureModels.RecognitionModel.Recognition02);
 
 		return detected_faces.ToList();
 	}
 
-	public static async Task<List<DetectedFace>> extractWithStreamAsync(IFaceClient client, Stream image, IList<FaceAttributeType> attributes = null)
+	public static async Task<List<AzureModels.DetectedFace>> extractWithStreamAsync(IFaceClient client, Stream image, IList<AzureModels.FaceAttributeType> attributes = null)
 	{
-		IList<DetectedFace> detected_faces = await client.Face.DetectWithStreamAsync(
+		IList<AzureModels.DetectedFace> detected_faces = await client.Face.DetectWithStreamAsync(
 			image,
 			returnFaceAttributes: attributes,
-			recognitionModel: RecognitionModel.Recognition02);
+			recognitionModel: AzureModels.RecognitionModel.Recognition02);
 
 		return detected_faces.ToList();
 	}
@@ -73,26 +133,26 @@ public static class Utils
 	{
 		Debug.Log(string.Format("[Main] extractFaceWithUrl | url: {0}", url));
 
-		IList<FaceAttributeType> return_face_attributes = new List<FaceAttributeType> {
-				FaceAttributeType.Accessories,
-				FaceAttributeType.Age,
-				FaceAttributeType.Blur,
-				FaceAttributeType.Emotion,
-				FaceAttributeType.Exposure,
-				FaceAttributeType.FacialHair,
-				FaceAttributeType.Gender,
-				FaceAttributeType.Glasses,
-				FaceAttributeType.Hair,
-				FaceAttributeType.HeadPose,
-				FaceAttributeType.Makeup,
-				FaceAttributeType.Noise,
-				FaceAttributeType.Occlusion,
-				FaceAttributeType.Smile
+		IList<AzureModels.FaceAttributeType> return_face_attributes = new List<AzureModels.FaceAttributeType> {
+				AzureModels.FaceAttributeType.Accessories,
+				AzureModels.FaceAttributeType.Age,
+				AzureModels.FaceAttributeType.Blur,
+				AzureModels.FaceAttributeType.Emotion,
+				AzureModels.FaceAttributeType.Exposure,
+				AzureModels.FaceAttributeType.FacialHair,
+				AzureModels.FaceAttributeType.Gender,
+				AzureModels.FaceAttributeType.Glasses,
+				AzureModels.FaceAttributeType.Hair,
+				AzureModels.FaceAttributeType.HeadPose,
+				AzureModels.FaceAttributeType.Makeup,
+				AzureModels.FaceAttributeType.Noise,
+				AzureModels.FaceAttributeType.Occlusion,
+				AzureModels.FaceAttributeType.Smile
 		};
 
 		float start_time = getCurrentTimestamp();
 		// 儲存偵測到的臉部列表
-		List<DetectedFace> detected_faces =
+		List<AzureModels.DetectedFace> detected_faces =
 			await extractWithUrlAsync(client, url, return_face_attributes);
 
 		Debug.Log(string.Format("[Main] extractFace | {0} face(s) detected from image.",
@@ -107,7 +167,7 @@ public static class Utils
 				face.FaceRectangle.Left, face.FaceRectangle.Top, face.FaceRectangle.Width, face.FaceRectangle.Height));
 
 			// Get accessories(配件) of the faces
-			List<Accessory> accessoriesList = (List<Accessory>)face.FaceAttributes.Accessories;
+			List<AzureModels.Accessory> accessoriesList = (List<AzureModels.Accessory>)face.FaceAttributes.Accessories;
 			int count = face.FaceAttributes.Accessories.Count;
 			string accessory;
 
@@ -136,7 +196,7 @@ public static class Utils
 			// Get emotion on the face
 			string emotionType = string.Empty;
 			double emotionValue = 0.0;
-			Emotion emotion = face.FaceAttributes.Emotion;
+			AzureModels.Emotion emotion = face.FaceAttributes.Emotion;
 
 			// emotion 下的各個情緒，變數類型為 double
 			if (emotion.Anger > emotionValue)
@@ -195,7 +255,7 @@ public static class Utils
 			Debug.Log(string.Format("[Main] extractFace | Glasses: {0}", face.FaceAttributes.Glasses));
 
 			// Get hair color
-			Hair hair = face.FaceAttributes.Hair;
+			AzureModels.Hair hair = face.FaceAttributes.Hair;
 			string color = null;
 			if (hair.HairColor.Count == 0)
 			{
@@ -210,7 +270,7 @@ public static class Utils
 			}
 
 			double maxConfidence = 0.0f;
-			foreach (HairColor hairColor in hair.HairColor)
+			foreach (AzureModels.HairColor hairColor in hair.HairColor)
 			{
 				if (hairColor.Confidence <= maxConfidence)
 				{
@@ -246,28 +306,28 @@ public static class Utils
 	{
 		Debug.Log(string.Format("[Main] extractFaceWithStream"));
 
-		IList<FaceAttributeType> return_face_attributes = new List<FaceAttributeType> {
-				FaceAttributeType.Accessories,
-				FaceAttributeType.Age,
-				FaceAttributeType.Blur,
-				FaceAttributeType.Emotion,
-				FaceAttributeType.Exposure,
-				FaceAttributeType.FacialHair,
-				FaceAttributeType.Gender,
-				FaceAttributeType.Glasses,
-				FaceAttributeType.Hair,
-				FaceAttributeType.HeadPose,
-				FaceAttributeType.Makeup,
-				FaceAttributeType.Noise,
-				FaceAttributeType.Occlusion,
-				FaceAttributeType.Smile
+		IList<AzureModels.FaceAttributeType> return_face_attributes = new List<AzureModels.FaceAttributeType> {
+				AzureModels.FaceAttributeType.Accessories,
+				AzureModels.FaceAttributeType.Age,
+				AzureModels.FaceAttributeType.Blur,
+				AzureModels.FaceAttributeType.Emotion,
+				AzureModels.FaceAttributeType.Exposure,
+				AzureModels.FaceAttributeType.FacialHair,
+				AzureModels.FaceAttributeType.Gender,
+				AzureModels.FaceAttributeType.Glasses,
+				AzureModels.FaceAttributeType.Hair,
+				AzureModels.FaceAttributeType.HeadPose,
+				AzureModels.FaceAttributeType.Makeup,
+				AzureModels.FaceAttributeType.Noise,
+				AzureModels.FaceAttributeType.Occlusion,
+				AzureModels.FaceAttributeType.Smile
 		};
 
 		float start_time;
 		start_time = getCurrentTimestamp();
 
 		// 儲存偵測到的臉部列表
-		List<DetectedFace> detected_faces =
+		List<AzureModels.DetectedFace> detected_faces =
 			await extractWithStreamAsync(client, image, return_face_attributes);
 
 		Debug.Log(string.Format("[Main] extractFaceWithStream | {0} face(s) detected from image.",
@@ -282,7 +342,7 @@ public static class Utils
 				face.FaceRectangle.Left, face.FaceRectangle.Top, face.FaceRectangle.Width, face.FaceRectangle.Height));
 
 			// Get accessories of the faces
-			List<Accessory> accessories_list = (List<Accessory>)face.FaceAttributes.Accessories;
+			List<AzureModels.Accessory> accessories_list = (List<AzureModels.Accessory>)face.FaceAttributes.Accessories;
 			int count = face.FaceAttributes.Accessories.Count;
 
 			string accessory;
@@ -312,7 +372,7 @@ public static class Utils
 			// Get emotion on the face
 			string emotionType = string.Empty;
 			double emotionValue = 0.0;
-			Emotion emotion = face.FaceAttributes.Emotion;
+			AzureModels.Emotion emotion = face.FaceAttributes.Emotion;
 
 			// emotion 下的各個情緒，變數類型為 double
 			if (emotion.Anger > emotionValue)
@@ -371,7 +431,7 @@ public static class Utils
 			Debug.Log(string.Format("[Main] extractFaceWithStream | Glasses: {0}", face.FaceAttributes.Glasses));
 
 			// Get hair color
-			Hair hair = face.FaceAttributes.Hair;
+			AzureModels.Hair hair = face.FaceAttributes.Hair;
 			string color = null;
 			if (hair.HairColor.Count == 0)
 			{
@@ -386,7 +446,7 @@ public static class Utils
 			}
 
 			double maxConfidence = 0.0f;
-			foreach (HairColor hairColor in hair.HairColor)
+			foreach (AzureModels.HairColor hairColor in hair.HairColor)
 			{
 				if (hairColor.Confidence <= maxConfidence)
 				{
@@ -415,13 +475,13 @@ public static class Utils
 
 		Debug.Log(string.Format("[Main] extractFaceWithStream | timestemp: {0:F8}", Utils.getCurrentTimestamp() - start_time));
 	} 
-	#endregion
+#endregion
 
-	#region PersonGroup
+#region PersonGroup
 	public static async Task<bool> isPersonGroupExist(IFaceClient client, string group_id)
 	{
-		IList<PersonGroup> groups = await client.PersonGroup.ListAsync();
-		foreach (PersonGroup group in groups)
+		IList<AzureModels.PersonGroup> groups = await client.PersonGroup.ListAsync();
+		foreach (AzureModels.PersonGroup group in groups)
 		{
 			// 5ce45c41-d387-4afc-8241-279da096e27e
 			if (group.PersonGroupId == group_id)
@@ -435,19 +495,19 @@ public static class Utils
 
 	public static async Task printAllPersonGroupId(IFaceClient client)
 	{
-		IList<PersonGroup> groups = await client.PersonGroup.ListAsync();
-		foreach (PersonGroup group in groups)
+		IList<AzureModels.PersonGroup> groups = await client.PersonGroup.ListAsync();
+		foreach (AzureModels.PersonGroup group in groups)
 		{
 			Debug.Log(string.Format("ID: {0}", group.PersonGroupId));
 		}
 	}
 
-	public static async Task<List<Person>> getPersons(IFaceClient client, string group_id)
+	public static async Task<List<AzureModels.Person>> getPersons(IFaceClient client, string group_id)
 	{
-		IList<Person> person_list = await client.PersonGroupPerson.ListAsync(group_id);
+		IList<AzureModels.Person> person_list = await client.PersonGroupPerson.ListAsync(group_id);
 		return person_list.ToList();
 	}
-	#endregion
+#endregion
 
 	// ==================================================
 	public static float getCurrentTimestamp()
@@ -455,7 +515,7 @@ public static class Utils
         return Time.time;
     }
 
-    #region 無法藉由點擊 Editor log 跳到實際腳本位置
+#region 無法藉由點擊 Editor log 跳到實際腳本位置
     /* 以下屬性只能置於參數位置，不能於函式內呼叫
      * CallerLineNumber: 實際呼叫的行數位置
      * CallerMemberName: 實際呼叫的函數名稱
@@ -473,7 +533,5 @@ public static class Utils
         message = string.Format("[{0}] ({1}) {2}\n{3}", member, line_num, message, file_path);
         Debug.LogError(message);
     }
-    #endregion
-
-
+#endregion
 }

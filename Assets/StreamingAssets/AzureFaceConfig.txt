@@ -1,0 +1,3 @@
+FACE_SUBSCRIPTION_KEY1 1dbeec6dcfa647b9b216c4fcdca
+FACE_SUBSCRIPTION_KEY2 d3d4ad3429a44538bf312581368
+FACE_ENDPOINT https://azurefaceone.cognitiveservices.azure.com/
