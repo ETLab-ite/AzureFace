@@ -1089,7 +1089,8 @@ public class Main : MonoBehaviour
 		//	await Task.Delay(3000);
 		//}
 
-		string image_name = "G12345-5.PNG";
+		string image_name = "B345-5.PNG";
+		//string image_name = "G12345-5.PNG";
 		Debug.Log(string.Format("[Main] identifyInPersonGroupWithTrainingDemo | image_name: {0}", image_name));
 		await identifyInPersonGroup(client, group_id, image_name);
 
