@@ -10,14 +10,19 @@ using AzureModels = Microsoft.Azure.CognitiveServices.Vision.Face.Models;
 using System.Linq;
 using UnityEngine.Networking;
 using ETLab;
+using UnityAsync;
 
 public static class Utils
 {
     // 使用端點和金鑰來具現化用戶端。使用金鑰建立 ApiKeyServiceClientCredentials 物件，並使用該物件與您的端點建立 FaceClient 物件。
     public static IFaceClient authenticate(string endpoint, string key)
     {
-        return new FaceClient(new ApiKeyServiceClientCredentials(key)) { Endpoint = endpoint };
-    }
+		Debug.Log(string.Format("[Utils] authenticate | endpoint: {0}, key: {1}", endpoint, key));
+		FaceClient client = new FaceClient(new ApiKeyServiceClientCredentials(key)) { Endpoint = endpoint };
+		Debug.Log(string.Format("[Utils] authenticate | new FaceClient"));
+		return client;
+
+	}
 
 	// TODO: 考慮不同裝置的讀檔方式
 	public static void initConfigData(int config_code=0)
@@ -51,7 +56,7 @@ public static class Utils
 		}
 #elif UNITY_ANDROID
 		string path = string.Format("jar:file://{0}!/assets/AzureFaceConfig.txt", Application.dataPath);
-		
+		Debug.Log(string.Format("[Utils] initConfigData | path: {0}", path));
 		_ = initConfigDataAsync(path, config_code);
 #endif
 	}
@@ -59,8 +64,9 @@ public static class Utils
 	static async Task initConfigDataAsync(string path, int config_code)
 	{
 		string config = await androidReadSvgAsync(path);
+		Debug.Log(string.Format("[Utils] initConfigDataAsync | config: {0}", config));
 
-		if(config == null)
+		if (config == null)
 		{
 			Debug.LogError(string.Format("[Utils] loadConfigData | Can not read from Android."));
 			return;
@@ -72,6 +78,7 @@ public static class Utils
 		foreach (string line in lines)
 		{
 			content = line.Split(' ');
+			Debug.Log(string.Format("[Utils] initConfigDataAsync | line: {0}", line));
 
 			switch (content[0])
 			{
@@ -125,6 +132,8 @@ public static class Utils
 			image,
 			returnFaceAttributes: attributes,
 			recognitionModel: AzureModels.RecognitionModel.Recognition02);
+
+		await new UnityEngine.WaitForSecondsRealtime(Time.deltaTime);
 
 		return detected_faces.ToList();
 	}
