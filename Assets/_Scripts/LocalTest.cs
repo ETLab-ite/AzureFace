@@ -30,12 +30,13 @@ public class LocalTest : MonoBehaviour
         image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
 
         Stream stream = new MemoryStream(bytes);
-
+        _ = testAzureApi(stream);
 
 #elif UNITY_ANDROID
         path = string.Format("jar:file://{0}!/assets/image/miyu.jpg", Application.dataPath);
         _ = loadImageAsync(path);
 #endif
+
 
     }
 
@@ -58,6 +59,9 @@ public class LocalTest : MonoBehaviour
         texture.LoadImage(bytes);
         texture.Apply();
         image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+
+        Stream stream = new MemoryStream(bytes);
+        await testAzureApi(stream);
     }
 
     async Task<byte[]> androidLoadImageAsync(string path)
@@ -79,6 +83,16 @@ public class LocalTest : MonoBehaviour
 
     async Task testAzureApi(Stream stream)
     {
-        ETLab.Emotion emotion = new ETLab.Emotion();
+        ETLab.Emotion emotion = new ETLab.Emotion(9527);
+        List<Dictionary<string, double>> emotions = await emotion.extractEmotionWithStream(stream);
+        int n_face = emotions.Count;
+        Debug.Log(string.Format("[EmotionTest] extractEmotionTest | {0} faces detected.", n_face));
+        Dictionary<string, double> dict = emotions[0];
+
+        foreach (string emotion_type in dict.Keys)
+        {
+            string msg = string.Format("{0}: {1:F4}", emotion_type, dict[emotion_type]);
+            Debug.Log(string.Format("[EmotionTest] extractEmotionTest | {0}", msg));
+        }
     }
 }

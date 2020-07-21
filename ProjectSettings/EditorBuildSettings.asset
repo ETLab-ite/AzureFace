@@ -11,7 +11,10 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_Scenes/EmotionScene.unity
     guid: b59f284cf4d6e114daffd5570410a572
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Scenes/LocalFileScene.unity
     guid: 2e6afc4922c214c44a5204d3b74014d4
+  - enabled: 1
+    path: Assets/_Scenes/JsonScene.unity
+    guid: 9ba55ba9401437c48bfe7b60abf3d908
   m_configObjects: {}
